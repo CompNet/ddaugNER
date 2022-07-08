@@ -18,8 +18,12 @@ class CoNLLDataset(NERDataset):
         usage_percentage: float = 1.0,
         keep_only_classes: Optional[Set[str]] = None,
         context_size: int = 0,
+        data_aug_replace: bool = False,
     ) -> None:
-        """ """
+        """
+        :param data_aug_replace: if ``True``, replace existing
+            examples instead of adding new ones
+        """
         assert len(augmenters) == len(aug_frequencies)
 
         # Dataset loading
@@ -49,8 +53,6 @@ class CoNLLDataset(NERDataset):
         self.augmenters = augmenters
         self.aug_frequencies = aug_frequencies
 
-        augmented_sents = []
-
         for ner_class, local_augmenters in self.augmenters.items():
 
             for i, augmenter in enumerate(local_augmenters):
@@ -58,17 +60,28 @@ class CoNLLDataset(NERDataset):
                 local_augmented_sents = []
                 aug_freq = self.aug_frequencies[ner_class][i]
 
-                while len(local_augmented_sents) < len(self.sents) * aug_freq:
-                    sent = random.choice(self.sents)
-                    # kind of a hack - NER class is passed in case of
-                    # LabelWiseNERAugmenter
-                    augmented = augmenter(sent, prev_entity_type=ner_class)
-                    if not augmented is None:
-                        local_augmented_sents.append(augmented)
+                if data_aug_replace:
+                    assert aug_freq <= 1.0
+                    while len(local_augmented_sents) < len(self.sents) * aug_freq:
+                        sent_i = random.choice(range(self.sents))
+                        sent = self.sents[sent_i]
+                        # kind of a hack - NER class is passed in case of
+                        # LabelWiseNERAugmenter
+                        augmented = augmenter(sent, prev_entity_type=ner_class)
+                        if not augmented is None:
+                            local_augmented_sents.append((sent_i, augmented))
+                    for sent_i, augmented_sent in local_augmented_sents:
+                        self.sents[sent_i] = augmented_sent
+                else:
+                    while len(local_augmented_sents) < len(self.sents) * aug_freq:
+                        sent = random.choice(self.sents)
+                        # kind of a hack - NER class is passed in case of
+                        # LabelWiseNERAugmenter
+                        augmented = augmenter(sent, prev_entity_type=ner_class)
+                        if not augmented is None:
+                            local_augmented_sents.append(augmented)
 
-                augmented_sents += local_augmented_sents
-
-        self.sents += augmented_sents
+                    self.sents += local_augmented_sents
 
         # Init
         super().__init__(
