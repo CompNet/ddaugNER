@@ -63,7 +63,7 @@ class CoNLLDataset(NERDataset):
                 if data_aug_replace:
                     assert aug_freq <= 1.0
                     while len(local_augmented_sents) < len(self.sents) * aug_freq:
-                        sent_i = random.choice(range(self.sents))
+                        sent_i = random.choice(range(len(self.sents)))
                         sent = self.sents[sent_i]
                         # kind of a hack - NER class is passed in case of
                         # LabelWiseNERAugmenter
