@@ -83,7 +83,7 @@ Please cite this work as follows :
   booktitle = {{Workshop on Computational Methods in the Humanities (COMHUM)}},
   year = {2022},
   hal_id = {hal-03617722},
-  hal_version = {v1},
+  hal_version = {v2},
 }
 ```
 
@@ -129,7 +129,7 @@ Please cite this work as follows :
   booktitle = {{29{\`e}me Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)}},
   year = {2022},
   hal_id = {hal-03651510},
-  hal_version = {v2},
+  hal_version = {v3},
 }
 ```
 
