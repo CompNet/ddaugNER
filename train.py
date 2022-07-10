@@ -53,6 +53,13 @@ if __name__ == "__main__":
         default="{}",
         help="a json dictionary mapping a NER class to a list of frequencies for the given replacement strategies, in order",
     )
+    parser.add_argument(
+        "-dar",
+        "--data-aug-replace",
+        default=False,
+        action="store_true",
+        help="if True, replace existing example instead of adding supplementary ones",
+    )
     args = parser.parse_args()
 
     print("running with config : ")
@@ -76,6 +83,7 @@ if __name__ == "__main__":
         context_size=args.context_size,
         usage_percentage=args.conll_percentage,
         keep_only_classes=args.keep_only_classes,
+        data_aug_replace=args.data_aug_replace,
     )
     valid = CoNLLDataset.valid_dataset(
         {}, {}, context_size=args.context_size, keep_only_classes=args.keep_only_classes
