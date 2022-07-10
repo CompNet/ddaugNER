@@ -67,6 +67,7 @@ poetry run python extract_metrics.py\
        --model-path model.pth\
        --global-metrics\
        --context-size 1\
+       --book-group "fantasy"\
        --output-file results.json
 ```
 
@@ -108,6 +109,7 @@ for i in 0.05 0.1 0.5 1.0; do
 			--model-path model.pth\
 			--global-metrics\
 			--context-size 1\
+			--book-group "fantasy"\
 			--output-file "results_${aug}_${i}.json"
 
     done
