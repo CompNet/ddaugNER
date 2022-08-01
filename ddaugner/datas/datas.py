@@ -39,6 +39,9 @@ class NERSentence:
         :return: a list of sentences, with ``left_context`` and ``right_context`` set with
             surrounding sentences.
         """
+        if len(sents) == 0:
+            return []
+
         new_sents: List[NERSentence] = []
 
         window_size = 1 + 2 * context_size
