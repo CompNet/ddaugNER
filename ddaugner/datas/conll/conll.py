@@ -1,6 +1,6 @@
 from __future__ import annotations
-from typing import Dict, List, Optional, Set
-import os, random
+from typing import Dict, List, Optional, Set, Tuple
+import os, random, math
 from ddaugner.datas import NERDataset, NERSentence
 from ddaugner.datas.aug import NERAugmenter
 
@@ -57,31 +57,36 @@ class CoNLLDataset(NERDataset):
 
             for i, augmenter in enumerate(local_augmenters):
 
-                local_augmented_sents = []
                 aug_freq = self.aug_frequencies[ner_class][i]
 
                 if data_aug_replace:
-                    assert aug_freq <= 1.0
-                    while len(local_augmented_sents) < len(self.sents) * aug_freq:
-                        sent_i = random.choice(range(len(self.sents)))
+                    assert aug_freq > 0 and aug_freq <= 1.0
+                    shuffled_idx = list(range(len(self.sents)))
+                    random.shuffle(shuffled_idx)
+                    augmented_sents_max_nb = math.ceil(len(self.sents) * aug_freq)
+                    augmented_i_and_sents: List[Tuple[int, NERSentence]] = []
+                    for sent_i in shuffled_idx:
+                        if len(augmented_i_and_sents) >= augmented_sents_max_nb:
+                            break
                         sent = self.sents[sent_i]
                         # kind of a hack - NER class is passed in case of
                         # LabelWiseNERAugmenter
                         augmented = augmenter(sent, prev_entity_type=ner_class)
                         if not augmented is None:
-                            local_augmented_sents.append((sent_i, augmented))
-                    for sent_i, augmented_sent in local_augmented_sents:
+                            augmented_i_and_sents.append((i, augmented))
+                    for sent_i, augmented_sent in augmented_i_and_sents:
                         self.sents[sent_i] = augmented_sent
                 else:
-                    while len(local_augmented_sents) < len(self.sents) * aug_freq:
+                    augmented_sents: List[NERSentence] = []
+                    while len(augmented_sents) < len(self.sents) * aug_freq:
                         sent = random.choice(self.sents)
                         # kind of a hack - NER class is passed in case of
                         # LabelWiseNERAugmenter
                         augmented = augmenter(sent, prev_entity_type=ner_class)
                         if not augmented is None:
-                            local_augmented_sents.append(augmented)
+                            augmented_sents.append(augmented)
 
-                    self.sents += local_augmented_sents
+                    self.sents += augmented_sents
 
         # Init
         super().__init__(
