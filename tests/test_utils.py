@@ -1,6 +1,5 @@
 from typing import List, Tuple
-import unittest, random
-from unittest.case import TestCase
+import unittest
 from hypothesis import given, strategies as st
 from strategies import bio_sequence
 from ddaugner.utils import (

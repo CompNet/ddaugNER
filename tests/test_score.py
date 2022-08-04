@@ -1,10 +1,8 @@
 import os
-from random import shuffle
 import subprocess, re
 from typing import List
 import unittest
 from hypothesis import given, strategies as st
-from strategies import bio_sequence
 from hypothesis.control import assume
 from ddaugner.datas.datas import NERSentence
 from ddaugner.score import score_ner_old
