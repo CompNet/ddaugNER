@@ -35,7 +35,7 @@ class TestConllAugment(unittest.TestCase):
     """"""
 
     @given(
-        sents=st.lists(ner_sentence(conll.CONLL_NER_CLASSES), min_size=1),
+        sents=st.lists(ner_sentence(list(conll.CONLL_NER_CLASSES)), min_size=1),
         aug_freq=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )
     def test_augmented_sents_are_more_numerous(
@@ -51,7 +51,7 @@ class TestConllAugmentReplace(unittest.TestCase):
     """"""
 
     @given(
-        sents=st.lists(ner_sentence(conll.CONLL_NER_CLASSES), min_size=1),
+        sents=st.lists(ner_sentence(list(conll.CONLL_NER_CLASSES)), min_size=1),
         aug_ratio=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )
     def test_replacing_sents_doesnt_add_new_ones(
@@ -63,7 +63,9 @@ class TestConllAugmentReplace(unittest.TestCase):
         self.assertEqual(len(augmented), len(sents))
 
     @given(
-        sents=st.lists(ner_sentence(conll.CONLL_NER_CLASSES, min_size=1), min_size=1),
+        sents=st.lists(
+            ner_sentence(list(conll.CONLL_NER_CLASSES), min_size=1), min_size=1
+        ),
         aug_ratio=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )
     def test_replacing_sents_yield_some_new_sents(

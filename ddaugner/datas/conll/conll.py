@@ -8,7 +8,7 @@ from ddaugner.utils import flattened
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-CONLL_NER_CLASSES = ["PER", "LOC", "ORG", "MISC"]
+CONLL_NER_CLASSES = {"PER", "LOC", "ORG", "MISC"}
 
 
 def _augment(
