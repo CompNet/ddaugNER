@@ -1,11 +1,13 @@
 from __future__ import annotations
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Literal, Optional, Set, Tuple
 import os, random, math, copy
+from collections import Counter
+import numpy as np
+from scipy import linalg
 from ddaugner.datas import NERDataset, NERSentence
 from ddaugner.datas.aug import NERAugmenter
-from ddaugner.utils import flattened
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
+from ddaugner.ner_utils import ner_classes_appearances_nb, ner_classes_ratios
+from ddaugner.utils import entities_from_bio_tags, flattened
 
 
 CONLL_NER_CLASSES = {"PER", "LOC", "ORG", "MISC"}
@@ -25,7 +27,8 @@ def _augment(
         augmentation frequency to use for each augmenter of
         ``augmenter``.
 
-    :return: a list of sents, with some of them replaced according to
+    :return: a list of sents, with some of them being augmented
+             version of one of the given sents according to
              ``augmenters``
     """
     for ner_class, local_augmenters in augmenters.items():
@@ -41,7 +44,8 @@ def _augment(
             augmented_sents: List[NERSentence] = []
 
             while len(augmented_sents) < len(sents) * aug_freq:
-                sent = random.choice(sents)
+                sent_i = random.choice(range(len(sents)))
+                sent = sents[sent_i]
                 # kind of a hack - NER class is passed in case of
                 # LabelWiseNERAugmenter
                 augmented = augmenter(sent, prev_entity_type=ner_class)
@@ -51,6 +55,124 @@ def _augment(
             new_sents += augmented_sents
 
     return new_sents
+
+
+def _augment_balance(
+    sents: List[NERSentence],
+    augmenters: Dict[str, List[NERAugmenter]],
+    aug_frequencies: Dict[str, List[float]],
+):
+    """
+    Augment the input sentences, and restore the classes ratio as it
+    was originally by upsampling
+
+    :param sents: a list of sentences to augment
+    :param augmenters: a mapping of NER class to some augmenters to
+        use for entities of this class.
+    :param aug_frequencies: a mapping of NER class to a list of
+        augmentation frequency to use for each augmenter of
+        ``augmenter``.
+
+    :return: a list of sents, with some of them being augmented
+             version of one of the given sents according to
+             ``augmenters``
+    """
+    # augment sentences according to augmenters
+    augmented_sents = _augment(sents, augmenters, aug_frequencies)
+
+    # Find the number of entities needed to balance the dataset by
+    # upsampling.
+    #
+    # Let :
+    # - r be the original ratio vectors (sents_cls_ratios_v)
+    # - a be the vector of the number of entities per class in the
+    #   augmented sents (augmented_classes_appearances_nb_v)
+    # - e the number of entities in the augmented sents
+    # - c be the number of classes (len(CONLL_NER_CLASSES))
+    #
+    # We want to reequilibrate the ratio of classes of the augmented
+    # dataset such that it is equal to s by upsampling. We want to
+    # find c real numbers n_1, n_2, ..., n_c such that, for each
+    # class, adding those numbers of entities will reequilibrate the
+    # dataset. Let ∑n be the sum of n_1, n_2, ..., n_c. In terms of
+    # classes ratio, we are trying to solve :
+    #
+    # [(a_1 + n_1) / (e + ∑n) , (a_2 + n_2) / (e + ∑n) , ..., (a_c + n_c) / (e + ∑n)] = r
+    #
+    # which can be written as a system :
+    #
+    # (a_1 + n_1) / (e + ∑n) = r_1
+    # (a_2 + n_2) / (e + ∑n) = r_2
+    # ...
+    # (a_c + n_c) / (e + ∑n) = r_c
+    #
+    # which we can re-arrange as :
+    # n_1 (r_1 - 1) + n_2 r_1 + ... + n_c r_1 = a_1 - e r_1
+    # n_1 r_2 + n_2 (r_2 - 1) + ... + n_c r_2 = a_2 - e r_2
+    # ...
+    # n_1 r_c + n_2 r_c + ... + n_c (r_c - 1) = a_c - e r_c
+    #
+    # We also know that the n_i = 0 for the majority classes, since we
+    # won't add any new examples for those
+    sents_cls_ratios = ner_classes_ratios(sents, CONLL_NER_CLASSES)
+    if sents_cls_ratios is None:
+        return augmented_sents
+    # matrix wont be invertible in the case where a class
+    # was alone
+    if any([ratio == 1.0 for ratio in sents_cls_ratios.values()]):
+        return augmented_sents
+
+    aug_cls_nb = ner_classes_appearances_nb(augmented_sents)
+    sorted_cls = sorted(CONLL_NER_CLASSES)
+
+    r = [sents_cls_ratios[cls] for cls in sorted_cls]
+    a = np.array([aug_cls_nb[cls] for cls in sorted_cls])
+    c = len(CONLL_NER_CLASSES)
+    e = sum(aug_cls_nb.values())
+
+    # indices of the majority classes in our system, we want to ignore
+    # the lines and the column corresponding to majority classes
+    majority_classes_idx = np.argwhere(a == np.amax(a)).flatten()
+    sorted_non_majority_classes = [
+        cls for i, cls in enumerate(sorted_cls) if not i in majority_classes_idx
+    ]
+    majority_mask = np.array(
+        [
+            [
+                not j in majority_classes_idx and not i in majority_classes_idx
+                for j in range(c)
+            ]
+            for i in range(c)
+        ]
+    )
+
+    A = np.array([[r[i] - 1 if i == j else r[i] for j in range(c)] for i in range(c)])
+    A = A[majority_mask].reshape(
+        c - len(majority_classes_idx), c - len(majority_classes_idx)
+    )
+    b = np.array([a[i] - e * r[i] for i in range(c) if not i in majority_classes_idx])
+    n = linalg.solve(A, b)  # type: ignore
+
+    entities_to_add_per_class = {k: 0 for k in CONLL_NER_CLASSES}
+    for i in range(len(sorted_non_majority_classes)):
+        ner_class = sorted_non_majority_classes[i]
+        number_to_add = int(n[i])
+        entities_to_add_per_class[ner_class] = number_to_add
+
+    # Try to add the correct number of entities per class in the datasets
+    while any([v > 0 for v in entities_to_add_per_class.values()]):
+        for sent in sents:
+            entities = entities_from_bio_tags(sent.tokens, sent.tags)
+            entities_counter = Counter([e.tag for e in entities])
+            if not all(
+                [entities_to_add_per_class[k] >= v for k, v in entities_counter.items()]
+            ):
+                continue
+            augmented_sents.append(sent)
+            for entity in entities:
+                entities_to_add_per_class[entity.tag] -= 1
+
+    return augmented_sents
 
 
 def _augment_replace(
@@ -114,6 +236,9 @@ def _augment_replace(
     return new_sents
 
 
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+
 class CoNLLDataset(NERDataset):
     """A class representing a CoNLL-2003 dataset"""
 
@@ -125,11 +250,22 @@ class CoNLLDataset(NERDataset):
         usage_percentage: float = 1.0,
         keep_only_classes: Optional[Set[str]] = None,
         context_size: int = 0,
-        data_aug_replace: bool = False,
+        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
     ) -> None:
         """
-        :param data_aug_replace: if ``True``, replace existing
-            examples instead of adding new ones
+        :param aug_method: one of :
+
+                - ``'standard'`` : add new examples by creating them
+                  according to ``augmenters``
+
+                - ``'replace'`` : replace old examples by new one,
+                  created using ``augmenters``
+
+                - ``'balance_upsample'`` : add new examples by
+                  creating them according to ``augmenters``, and
+                  upsample if necessary to rebalance the dataset.
+                  Classes ratio will be the closest possible to the
+                  pre-augmentation ratio.
         """
         assert len(augmenters) == len(aug_frequencies)
 
@@ -160,12 +296,18 @@ class CoNLLDataset(NERDataset):
         self.augmenters = augmenters
         self.aug_frequencies = aug_frequencies
 
-        if data_aug_replace:
+        if aug_method == "standard":
+            self.sents = _augment(self.sents, self.augmenters, self.aug_frequencies)
+        elif aug_method == "replace":
             self.sents = _augment_replace(
                 self.sents, self.augmenters, self.aug_frequencies
             )
+        elif aug_method == "balance_upsample":
+            self.sents = _augment_balance(
+                self.sents, self.augmenters, self.aug_frequencies
+            )
         else:
-            self.sents = _augment(self.sents, self.augmenters, self.aug_frequencies)
+            raise ValueError(f"Unknown data augmentation method : {aug_method}")
 
         # Init
         super().__init__(
@@ -178,6 +320,7 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
+        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
@@ -185,6 +328,7 @@ class CoNLLDataset(NERDataset):
             augmenters,
             aug_frequencies,
             context_size=context_size,
+            aug_method=aug_method,
             **kwargs,
         )
 
@@ -193,6 +337,7 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
+        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
@@ -200,6 +345,7 @@ class CoNLLDataset(NERDataset):
             augmenters,
             aug_frequencies,
             context_size=context_size,
+            aug_method=aug_method,
             **kwargs,
         )
 
@@ -208,6 +354,7 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
+        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
@@ -215,5 +362,6 @@ class CoNLLDataset(NERDataset):
             augmenters,
             aug_frequencies,
             context_size=context_size,
+            aug_method=aug_method,
             **kwargs,
         )

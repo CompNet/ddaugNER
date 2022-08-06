@@ -1,50 +1,88 @@
-from typing import List, Optional
+from typing import List, Tuple, Optional
 import unittest
 from hypothesis import given, strategies as st
 from hypothesis import assume
+from ddaugner.ner_utils import ner_classes_ratios
 from tests.strategies import ner_sentence
-from ddaugner.datas.aug import rand_sent_entity_indices, replace_sent_entity
+from ddaugner.datas.aug import LabelWiseNERAugmenter
 from ddaugner.datas.datas import NERSentence
-from ddaugner.datas.aug import NERAugmenter
 import ddaugner.datas.conll.conll as conll
 
 
-class IdentityAugmenter(NERAugmenter):
-    def __call__(self, sent: NERSentence, *args, **kwargs) -> Optional[NERSentence]:
-        return sent
+class IdentityAugmenter(LabelWiseNERAugmenter):
+    """"""
+
+    def __init__(self) -> None:
+        super().__init__(conll.CONLL_NER_CLASSES)
+
+    def replacement_entity(
+        self, prev_entity_tokens: List[str], prev_entity_type: str
+    ) -> Tuple[List[str], str]:
+        return (prev_entity_tokens, prev_entity_type)
 
 
-class PERConstantAugmenter(NERAugmenter):
+class PERConstantAugmenter(LabelWiseNERAugmenter):
+    """"""
+
     def __init__(self, replacement: List[str]) -> None:
+        self.repl_entity_types = {"PER"}
         self.replacement = replacement
 
-    def __call__(self, sent: NERSentence, *args, **kwargs) -> Optional[NERSentence]:
-        indices = rand_sent_entity_indices(sent.tags, "PER")
-        if indices is None:
-            return None
-        return replace_sent_entity(
-            sent,
-            sent.tokens[indices[0] : indices[1] + 1],
-            "PER",
-            self.replacement,
-            "PER",
-        )
+    def replacement_entity(
+        self, prev_entity_tokens: List[str], prev_entity_type: str
+    ) -> Tuple[List[str], str]:
+        return (self.replacement, "PER")
 
 
 class TestConllAugment(unittest.TestCase):
     """"""
 
     @given(
-        sents=st.lists(ner_sentence(list(conll.CONLL_NER_CLASSES)), min_size=1),
+        sents=st.lists(ner_sentence(["PER"]), min_size=1, max_size=16),
         aug_freq=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )
     def test_augmented_sents_are_more_numerous(
         self, sents: List[NERSentence], aug_freq: float
     ):
+        assume(any(["B-PER" in sent.tags for sent in sents]))
         augmented = conll._augment(
             sents, {"PER": [IdentityAugmenter()]}, {"PER": [aug_freq]}
         )
         self.assertGreater(len(augmented), len(sents))
+
+
+class TestConllAugmentBalance(unittest.TestCase):
+    """"""
+
+    @given(
+        sents=st.lists(ner_sentence(["PER"]), min_size=1, max_size=16),
+        aug_freq=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
+    )
+    def test_augmented_sents_are_more_numerous(
+        self, sents: List[NERSentence], aug_freq: float
+    ):
+        assume(any(["B-PER" in sent.tags for sent in sents]))
+        augmented = conll._augment_balance(
+            sents, {"PER": [IdentityAugmenter()]}, {"PER": [aug_freq]}
+        )
+        self.assertGreater(len(augmented), len(sents))
+
+    def test_augmented_sents_ner_classes_ratio_is_balanced(self):
+        conll_dataset = conll.CoNLLDataset.train_dataset({}, {})
+        original_ratios = ner_classes_ratios(
+            conll_dataset.sents, conll.CONLL_NER_CLASSES
+        )
+        assert not original_ratios is None
+
+        augmented = conll._augment_balance(
+            conll_dataset.sents, {"PER": [IdentityAugmenter()]}, {"PER": [0.1]}
+        )
+        augmented_ratios = ner_classes_ratios(augmented, conll.CONLL_NER_CLASSES)
+        assert not augmented_ratios is None
+
+        for ner_class, class_ratio in augmented_ratios.items():
+            original_ratio = original_ratios[ner_class]
+            self.assertAlmostEqual(original_ratio, class_ratio, places=3)
 
 
 class TestConllAugmentReplace(unittest.TestCase):

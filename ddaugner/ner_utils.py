@@ -63,3 +63,34 @@ def conll_export(
             for sent in ref_sents:
                 for token, tag in zip(sent.tokens, sent.tags):
                     f.write(f"{token} {tag}\n")
+
+
+def ner_classes_appearances_nb(sents: List[NERSentence]) -> Counter:
+    """Compute the number of appearance of each NER class in a list of sentences"""
+    return Counter(
+        [
+            e.tag
+            for e in flattened(
+                [entities_from_bio_tags(sent.tokens, sent.tags) for sent in sents]
+            )
+        ]
+    )
+
+
+def ner_classes_ratios(
+    sents: List[NERSentence], ner_classes: Set[str]
+) -> Optional[Dict[str, float]]:
+    """Compute the proportion of each specified NER class in the given
+    sentences
+
+    :param sent: a list of ``NERSentence``
+    :param ner_classes: a list of NER classes
+
+    :return: a dict mapping a NER class to its appearance ratio, or
+             ``None`` if it this ratio is undefined
+    """
+    counter = ner_classes_appearances_nb(sents)
+    if len(counter) == 0:
+        return None
+    total = sum(counter.values())
+    return {k: counter[k] / total for k in ner_classes.union(set(counter.keys()))}
