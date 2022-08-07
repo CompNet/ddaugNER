@@ -1,7 +1,7 @@
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import unittest
 from hypothesis import given, strategies as st
-from hypothesis import assume
+from hypothesis import assume, settings
 from ddaugner.ner_utils import ner_classes_ratios
 from tests.strategies import ner_sentence
 from ddaugner.datas.aug import LabelWiseNERAugmenter
@@ -37,6 +37,7 @@ class PERConstantAugmenter(LabelWiseNERAugmenter):
 class TestConllAugment(unittest.TestCase):
     """"""
 
+    @settings(max_examples=10)
     @given(
         sents=st.lists(ner_sentence(["PER"]), min_size=1, max_size=16),
         aug_freq=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
@@ -54,6 +55,7 @@ class TestConllAugment(unittest.TestCase):
 class TestConllAugmentBalance(unittest.TestCase):
     """"""
 
+    @settings(max_examples=10)
     @given(
         sents=st.lists(ner_sentence(["PER"]), min_size=1, max_size=16),
         aug_freq=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
@@ -68,7 +70,7 @@ class TestConllAugmentBalance(unittest.TestCase):
         self.assertGreater(len(augmented), len(sents))
 
     def test_augmented_sents_ner_classes_ratio_is_balanced(self):
-        conll_dataset = conll.CoNLLDataset.train_dataset({}, {})
+        conll_dataset = conll.CoNLLDataset.train_dataset({}, {}, usage_percentage=0.1)
         original_ratios = ner_classes_ratios(
             conll_dataset.sents, conll.CONLL_NER_CLASSES
         )
@@ -88,6 +90,7 @@ class TestConllAugmentBalance(unittest.TestCase):
 class TestConllAugmentReplace(unittest.TestCase):
     """"""
 
+    @settings(max_examples=10)
     @given(
         sents=st.lists(
             ner_sentence(list(conll.CONLL_NER_CLASSES)),
@@ -104,6 +107,7 @@ class TestConllAugmentReplace(unittest.TestCase):
         )
         self.assertEqual(len(augmented), len(sents))
 
+    @settings(max_examples=10)
     @given(
         sents=st.lists(
             ner_sentence(list(conll.CONLL_NER_CLASSES), min_size=1),

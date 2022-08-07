@@ -2,7 +2,7 @@ from typing import List
 import unittest
 from tests.strategies import ner_sentence
 import hypothesis.strategies as st
-from hypothesis import given
+from hypothesis import given, settings
 from hypothesis.control import assume
 from ddaugner.ner_utils import ner_classes_ratios, prediction_errors
 from ddaugner.utils import entities_from_bio_tags
@@ -23,7 +23,8 @@ class TestPredictionErrors(unittest.TestCase):
 class TestNERClassesRatios(unittest.TestCase):
     """"""
 
-    @given(sents=st.lists(ner_sentence(["PER", "LOC"]), min_size=1))
+    @settings(max_examples=20)
+    @given(sents=st.lists(ner_sentence(["PER", "LOC"]), min_size=1, max_size=16))
     def test_sum_of_ratios_is_one_and_all_classes_are_present(
         self, sents: List[NERSentence]
     ):
