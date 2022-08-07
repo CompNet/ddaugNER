@@ -2,7 +2,7 @@ import unittest
 from hypothesis import given
 from ddaugner.datas.aug import all_augmenters
 from ddaugner.datas.datas import NERSentence
-from strategies import ner_sentence
+from tests.strategies import ner_sentence
 
 
 class TestAugmenters(unittest.TestCase):

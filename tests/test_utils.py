@@ -1,7 +1,7 @@
 from typing import List, Tuple
 import unittest
 from hypothesis import given, strategies as st
-from strategies import bio_sequence
+from tests.strategies import bio_sequence
 from ddaugner.utils import (
     entities_from_bio_tags,
     entities_to_bio_tags,

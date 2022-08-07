@@ -1,6 +1,6 @@
 from typing import List
 import unittest
-from strategies import ner_sentence
+from tests.strategies import ner_sentence
 import hypothesis.strategies as st
 from hypothesis import given
 from hypothesis.control import assume

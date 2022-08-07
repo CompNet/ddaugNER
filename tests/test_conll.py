@@ -89,7 +89,11 @@ class TestConllAugmentReplace(unittest.TestCase):
     """"""
 
     @given(
-        sents=st.lists(ner_sentence(list(conll.CONLL_NER_CLASSES)), min_size=1),
+        sents=st.lists(
+            ner_sentence(list(conll.CONLL_NER_CLASSES)),
+            min_size=1,
+            max_size=16,
+        ),
         aug_ratio=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )
     def test_replacing_sents_doesnt_add_new_ones(
@@ -102,7 +106,9 @@ class TestConllAugmentReplace(unittest.TestCase):
 
     @given(
         sents=st.lists(
-            ner_sentence(list(conll.CONLL_NER_CLASSES), min_size=1), min_size=1
+            ner_sentence(list(conll.CONLL_NER_CLASSES), min_size=1),
+            min_size=1,
+            max_size=16,
         ),
         aug_ratio=st.floats(min_value=0.0, exclude_min=True, max_value=1.0),
     )

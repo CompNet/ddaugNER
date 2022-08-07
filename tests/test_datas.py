@@ -1,6 +1,6 @@
 import unittest
 from hypothesis import given, strategies as st
-from strategies import ner_sentence
+from tests.strategies import ner_sentence
 from ddaugner.datas.datas import NERSentence
 
 
