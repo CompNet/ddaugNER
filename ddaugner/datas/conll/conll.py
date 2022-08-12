@@ -250,7 +250,7 @@ class CoNLLDataset(NERDataset):
         usage_percentage: float = 1.0,
         keep_only_classes: Optional[Set[str]] = None,
         context_size: int = 0,
-        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
+        aug_method: Optional[Literal["standard", "replace", "balance_upsample"]] = None,
     ) -> None:
         """
         :param aug_method: one of :
@@ -296,18 +296,22 @@ class CoNLLDataset(NERDataset):
         self.augmenters = augmenters
         self.aug_frequencies = aug_frequencies
 
-        if aug_method == "standard":
-            self.sents = _augment(self.sents, self.augmenters, self.aug_frequencies)
-        elif aug_method == "replace":
-            self.sents = _augment_replace(
-                self.sents, self.augmenters, self.aug_frequencies
-            )
-        elif aug_method == "balance_upsample":
-            self.sents = _augment_balance(
-                self.sents, self.augmenters, self.aug_frequencies
-            )
+        if aug_method is None:
+            assert len(self.augmenters) == 0
+            assert len(self.aug_frequencies) == 0
         else:
-            raise ValueError(f"Unknown data augmentation method : {aug_method}")
+            if aug_method == "standard":
+                self.sents = _augment(self.sents, self.augmenters, self.aug_frequencies)
+            elif aug_method == "replace":
+                self.sents = _augment_replace(
+                    self.sents, self.augmenters, self.aug_frequencies
+                )
+            elif aug_method == "balance_upsample":
+                self.sents = _augment_balance(
+                    self.sents, self.augmenters, self.aug_frequencies
+                )
+            else:
+                raise ValueError(f"Unknown data augmentation method : {aug_method}")
 
         # Init
         super().__init__(
@@ -320,7 +324,9 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
-        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
+        aug_method: Optional[
+            Literal["standard", "replace", "balance_upsample"]
+        ] = "standard",
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
@@ -337,7 +343,7 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
-        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
+        aug_method: Optional[Literal["standard", "replace", "balance_upsample"]] = None,
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
@@ -354,7 +360,7 @@ class CoNLLDataset(NERDataset):
         augmenters: Dict[str, List[NERAugmenter]],
         aug_frequencies: Dict[str, List[float]],
         context_size: int = 0,
-        aug_method: Literal["standard", "replace", "balance_upsample"] = "standard",
+        aug_method: Optional[Literal["standard", "replace", "balance_upsample"]] = None,
         **kwargs,
     ) -> CoNLLDataset:
         return CoNLLDataset(
