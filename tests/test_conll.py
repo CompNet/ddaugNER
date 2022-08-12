@@ -124,4 +124,12 @@ class TestConllAugmentReplace(unittest.TestCase):
             sents, {"PER": [PERConstantAugmenter(["ENTITY"])]}, {"PER": [aug_ratio]}
         )
         self.assertNotEqual(sents, augmented)
-        self.assertTrue(any(["ENTITY" in sent.tokens for sent in augmented]))
+        self.assertGreaterEqual(
+            len(
+                [
+                    "ENTITY" in sent.tokens or not "B-PER" in sent.tags
+                    for sent in augmented
+                ]
+            ),
+            aug_ratio * len(sents),
+        )

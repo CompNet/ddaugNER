@@ -228,7 +228,7 @@ def _augment_replace(
                 # LabelWiseNERAugmenter
                 augmented = augmenter(sent, prev_entity_type=ner_class)
                 if not augmented is None:
-                    augmented_i_and_sents.append((i, augmented))
+                    augmented_i_and_sents.append((sent_i, augmented))
 
             for sent_i, augmented_sent in augmented_i_and_sents:
                 new_sents[sent_i] = augmented_sent
