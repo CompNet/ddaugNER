@@ -11,6 +11,7 @@ from ddaugner.resources.word_names import WordNamesGazetteer
 from ddaugner.resources.conll_entities import ConllGazetteer
 from ddaugner.resources.wgold_names import WGoldNamesGazetteer
 from ddaugner.resources.dekker import DekkerFantasyPERGazetteer
+from ddaugner.resources.the_elder_scrolls import TheElderScrollsNamesGazetteer
 
 
 def rand_sent_entity_indices(
@@ -256,6 +257,22 @@ class DekkerFantasyAugmenter(LabelWiseNERAugmenter):
         return splitted_name, "PER"
 
 
+class TheElderScrollsAugmenter(LabelWiseNERAugmenter):
+    """"""
+
+    def __init__(self) -> None:
+        self.name_gazetter = TheElderScrollsNamesGazetteer()
+        super().__init__({"PER"})
+
+    def replacement_entity(
+        self, prev_entity_tokens: List[str], prev_entity_type: str
+    ) -> Tuple[List[str], str]:
+        random_name = self.name_gazetter.random_name()
+        splitted_name = re.split(r" ", random_name)
+        splitted_name = [t for t in splitted_name if not t in {" ", ""}]
+        return splitted_name, "PER"
+
+
 all_augmenters = {
     "conll": CoNLLAugmenter,
     "wgold": WGoldAugmenter,
@@ -264,4 +281,5 @@ all_augmenters = {
     "french": FrenchNamesAugmenter,
     "word_names": WordNamesAugmenter,
     "dekker_fantasy": DekkerFantasyAugmenter,
+    "the_elder_scrolls": TheElderScrollsAugmenter,
 }
