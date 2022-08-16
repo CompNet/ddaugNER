@@ -289,20 +289,56 @@ class NERDataset(Dataset):
 class BookDataset(NERDataset):
     """"""
 
-    def __init__(self, path: str, context_size: int = 0) -> None:
+    def __init__(
+        self, path: str, context_size: int = 0, fix_sent_tokenization: bool = False
+    ) -> None:
+        """
+        :param path:
+        :param context_size:
+        :param fix_sent_tokenization:
+        """
 
         sents = []
         with open(path) as f:
             sent = NERSentence([], [])
             for line in f:
-                splitted = line.strip().split(" ")
-                sent.tokens.append(splitted[0])
-                sent.tags.append(splitted[1])
-                if splitted[0] in {".", "?", "!"}:
+                token, tag = line.strip().split(" ")
+                sent.tokens.append(token)
+                sent.tags.append(tag)
+                if token in [".", "?", "!"] or (
+                    fix_sent_tokenization and token == "''"
+                ):
                     sents.append(sent)
                     sent = NERSentence([], [])
 
         sents = NERSentence.sents_with_surrounding_context(sents, context_size)
+
+        if not fix_sent_tokenization:
+            super().__init__(sents, {"O", "B-PER", "I-PER"})
+            return
+
+        for sent in sents:
+            for token_i, token in enumerate(sent.tokens):
+
+                # replace nltk's double quotes by conventional ones
+                if token in ["``", "''"]:
+                    sent.tokens[token_i] = '"'
+
+                # replace nltk's single quotes with conventional ones
+                if token == "`":
+                    sent.tokens[token_i] = "'"
+
+                # fix parentheses
+                if token == "-LRB-":
+                    sent.tokens[token_i] = "("
+                elif token == "-RRB-":
+                    sent.tokens[token_i] = ")"
+
+                # fix brackets
+                if token == "-LSB-":
+                    sent.tokens[token_i] = "["
+                elif token == "-RSB-":
+                    sent.tokens[token_i] = "]"
 
         super().__init__(sents, {"O", "B-PER", "I-PER"})
 

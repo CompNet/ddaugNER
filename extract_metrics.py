@@ -24,6 +24,7 @@ if __name__ == "__main__":
     parser.add_argument("-cs", "--context-size", type=int, default=0)
     parser.add_argument("-bg", "--book-group", type=str, default=None)
     parser.add_argument("-gm", "--global-metrics", action="store_true")
+    parser.add_argument("-fst", "--fix-sent-tokenization", action="store_true")
     parser.add_argument("-of", "--output-file", type=str)
     args = parser.parse_args()
 
@@ -46,7 +47,11 @@ if __name__ == "__main__":
     if args.global_metrics:
         dataset = EnsembleDataset(
             [
-                BookDataset(path, context_size=args.context_size)
+                BookDataset(
+                    path,
+                    context_size=args.context_size,
+                    fix_sent_tokenization=args.fix_sent_tokenization,
+                )
                 for path in tqdm(old_paths + new_paths)
             ],
         )
@@ -70,7 +75,11 @@ if __name__ == "__main__":
 
         book_name = re.search(r"[^.]*", os.path.basename(path)).group(0)  # type: ignore
 
-        dataset = BookDataset(path, context_size=args.context_size)
+        dataset = BookDataset(
+            path,
+            context_size=args.context_size,
+            fix_sent_tokenization=args.fix_sent_tokenization,
+        )
         predictions = predict(model, dataset, args.batch_size, quiet=True)
 
         precision, recall, f1 = score_ner(
