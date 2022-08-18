@@ -297,6 +297,7 @@ class BookDataset(NERDataset):
         :param context_size:
         :param fix_sent_tokenization:
         """
+        self.path = path
 
         sents = []
         with open(path) as f:
@@ -311,9 +312,8 @@ class BookDataset(NERDataset):
                     sents.append(sent)
                     sent = NERSentence([], [])
 
-        sents = NERSentence.sents_with_surrounding_context(sents, context_size)
-
         if not fix_sent_tokenization:
+            sents = NERSentence.sents_with_surrounding_context(sents, context_size)
             super().__init__(sents, {"O", "B-PER", "I-PER"})
             return
 
@@ -340,6 +340,7 @@ class BookDataset(NERDataset):
                 elif token == "-RSB-":
                     sent.tokens[token_i] = "]"
 
+        sents = NERSentence.sents_with_surrounding_context(sents, context_size)
         super().__init__(sents, {"O", "B-PER", "I-PER"})
 
 

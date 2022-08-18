@@ -6,7 +6,7 @@ from rich import print
 from tqdm import tqdm
 
 from ddaugner.datas import NERDataset, NERSentence, BookDataset
-from ddaugner.book_groups import groups
+from ddaugner.datas.dekker import load_dekker_books
 
 
 script_dir = f"{os.path.dirname(os.path.abspath(__file__))}"
@@ -27,32 +27,6 @@ def clean_dekker_etal_tags(tags: List[str]) -> List[str]:
             in_entity = False
 
     return new_tags
-
-
-class DekkerBookDataset(NERDataset):
-    """"""
-
-    def __init__(self, path: str) -> None:
-
-        tokens = []
-        tags = []
-        sents = []
-        with open(path) as f:
-            for line in f:
-                splitted = line.strip().split(" ")
-                try:
-                    tags.append(splitted[2])
-                    tokens.append(splitted[0])
-                    if tokens[-1] in {".", "?", "!"}:
-                        sents.append(NERSentence(tokens, clean_dekker_etal_tags(tags)))
-                        tokens = []
-                        tags = []
-                except IndexError:
-                    continue
-        if len(tokens) != 0:
-            sents.append(NERSentence(tokens, clean_dekker_etal_tags(tags)))
-
-        super().__init__(sents, {"B-PER", "I-PER", "O"})
 
 
 def metrics_dict(
@@ -77,17 +51,6 @@ if __name__ == "__main__":
     parser.add_argument("-bg", "--book-group", type=str, default=None)
     args = parser.parse_args()
 
-    old_paths = glob.glob(f"{script_dir}/ner/old/*.conll.fixed")
-    new_paths = glob.glob(f"{script_dir}/ner/new/*.conll.fixed")
-
-    if args.book_group:
-
-        def book_name(path: str) -> str:
-            return re.search(r"[^.]*", (os.path.basename(path))).group(0)  # type: ignore
-
-        old_paths = [p for p in old_paths if book_name(p) in groups[args.book_group]]
-        new_paths = [p for p in new_paths if book_name(p) in groups[args.book_group]]
-
     scores = {
         "illinois": {},
         "ixa": {},
@@ -95,33 +58,33 @@ if __name__ == "__main__":
         "stanford": {},
     }
 
-    for path in tqdm(old_paths + new_paths):
+    book_datasets = load_dekker_books("./ner", args.book_group)
 
-        book_set = path.split("/")[-2]
+    for book_dataset in tqdm(book_datasets):
+
+        book_set = book_dataset.path.split("/")[-2]
         book_name = re.search(r"[^.]*", os.path.basename(path)).group(0)  # type: ignore
 
-        book_dataset = BookDataset(path)
-
         illinois_path = f"{args.dekker_etal_repo_path}/NER_Experiments/{book_set.capitalize()}/{book_name}.illconllout"
-        illinois_dataset = DekkerBookDataset(illinois_path)
+        illinois_dataset = BookDataset(illinois_path)
         scores["illinois"][book_name] = metrics_dict(
             illinois_dataset, book_dataset, "illinois", book_name
         )
 
         ixa_path = f"{args.dekker_etal_repo_path}/NER_Experiments/{book_set.capitalize()}/{book_name}.ixa-conllout"
-        ixa_dataset = DekkerBookDataset(ixa_path)
+        ixa_dataset = BookDataset(ixa_path)
         scores["ixa"][book_name] = metrics_dict(
             ixa_dataset, book_dataset, "ixa", book_name
         )
 
         booknlp_path = f"{args.dekker_etal_repo_path}/NER_Experiments/{book_set.capitalize()}/{book_name}.booknlpoutput"
-        booknlp_dataset = DekkerBookDataset(booknlp_path)
+        booknlp_dataset = BookDataset(booknlp_path)
         scores["booknlp"][book_name] = metrics_dict(
             booknlp_dataset, book_dataset, "booknlp", book_name
         )
 
         stanford_path = f"{args.dekker_etal_repo_path}/NER_Experiments/{book_set.capitalize()}/{book_name}.stanfordout"
-        stanford_dataset = DekkerBookDataset(stanford_path)
+        stanford_dataset = BookDataset(stanford_path)
         scores["stanford"][book_name] = metrics_dict(
             stanford_dataset, book_dataset, "stanford", book_name
         )
