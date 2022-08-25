@@ -8,35 +8,15 @@ from nltk.corpus import stopwords
 from tqdm import tqdm
 from nameparser.config.titles import TITLES
 from transformers import BertTokenizer
-from ddaugner.datas.datas import BookDataset, EnsembleDataset
 from ddaugner.datas.conll import CoNLLDataset
-from ddaugner.book_groups import groups
 from ddaugner.utils import entities_from_bio_tags, flattened
+from ddaugner.datas.dekker import load_dekker_dataset
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 
-def load_fantasy_dataset(context_size: int) -> EnsembleDataset:
-
-    old_paths = glob.glob(f"{script_dir}/ner/old/*.conll.fixed")
-    new_paths = glob.glob(f"{script_dir}/ner/new/*.conll.fixed")
-
-    def book_name(path: str) -> str:
-        return re.search(r"[^.]*", (os.path.basename(path))).group(0)  # type: ignore
-
-    old_paths = [p for p in old_paths if book_name(p) in groups["fantasy"]]
-    new_paths = [p for p in new_paths if book_name(p) in groups["fantasy"]]
-
-    return EnsembleDataset(
-        [
-            BookDataset(path, context_size=context_size)
-            for path in tqdm(old_paths + new_paths)
-        ]
-    )
-
-
-dekker_dataset = load_fantasy_dataset(0)
+dekker_dataset = load_dekker_dataset("./ner", "fantasy")
 dekker_entities = entities_from_bio_tags(
     flattened([s.tokens for s in dekker_dataset.sents]),
     flattened([s.tags for s in dekker_dataset.sents]),

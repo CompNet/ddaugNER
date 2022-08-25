@@ -2,7 +2,7 @@ from typing import List
 import argparse, json, os
 import matplotlib.pyplot as plt
 from rich import print
-from ddaugner.book_groups import groups
+from ddaugner.datas.dekker import groups
 
 
 if __name__ == "__main__":
