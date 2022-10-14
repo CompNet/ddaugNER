@@ -11,6 +11,8 @@ poetry install
 
 Further commands in this /README/ assume that you activated the resulting python environment, either manually or by using `poetry shell`.
 
+Alternatively, you can manage everything in your own environment using the provided `requirements.txt` file (use `pip install -r requirements.txt` to install dependencies).
+
 ## Literary test corpus
 
 We re-annotated the corpus of [Dekker et al., 2019](https://peerj.com/articles/cs-189/#named-entity-recognition-experiments-and-results) to fix some errors. Due to copyright issues, tokens from the datasets are not directly available in this repository, but can be retrieved through a script :
