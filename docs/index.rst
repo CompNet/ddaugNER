@@ -109,7 +109,7 @@ we replace any occurence of the token ``"duck"`` by the token
 Augmenters for mention replacement should inherit
 :class:`LabelWiseNERAugmenter`, and can use specific helper functions
 to help implementation. A :class:`LabelWiseNERAugmenter` should only
-override the ``__init__`` :func:`replacement_entity` method. In
+override the ``__init__`` and :func:`replacement_entity` methods. In
 ``__init__``, one should pass a set of supported entity types.
 :func:`replacement_entity` takes as input the tokens of the entity to
 replace, and its type and should return the replacement tokens and the
@@ -126,9 +126,9 @@ any ``"PER"`` entity with ``"Gandalf"``:
         def replacement_entity(
 	    self, prev_entity_tokens: List[str], prev_entity_type: str
 	) -> Tuple[List[str], str]:
-	    return ["Gandalf", "PER"]
+	    return (["Gandalf"], "PER")
 
-This augmenter can the be passed when creating a CoNLL dataset:
+This augmenter can then be passed when creating a CoNLL dataset:
 
 .. code-block:: python
 
