@@ -38,7 +38,17 @@ def load_dekker_books(
     fix_sent_tokenization: bool = False,
     quiet: bool = False,
 ) -> List[BookDataset]:
+    """Load books from the Dekker et al. dataset
 
+    :param dataset_root:
+    :param book_group: if specified, restrict the loaded book to the
+        the specified group
+    :param context_size:
+    :param fix_sent_tokenization:
+    :param quiet:
+
+    :return: a list of :class:`BookDataset`, one per book
+    """
     dataset_root = dataset_root.rstrip("/")
     old_paths = glob.glob(f"{dataset_root}/old/*.conll.fixed")
     new_paths = glob.glob(f"{dataset_root}/new/*.conll.fixed")
@@ -68,6 +78,15 @@ def load_dekker_dataset(
     fix_sent_tokenization: bool = False,
     **kwargs,
 ) -> EnsembleDataset:
+    """Load the Dekker et al. dataset
+
+    :param dataset_root:
+    :param book_group: if specified, restrict the loaded book to the
+        the specified group
+    :param context_size:
+    :param fix_sent_tokenization:
+    :param quiet:
+    """
 
     return EnsembleDataset(
         load_dekker_books(

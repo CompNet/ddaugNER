@@ -23,6 +23,10 @@ python setup_dekker_dataset.py --dekker-etal-repo-path /path/to/dekker/repositor
 
 If you don't specify a path to Dekker et al repository, the script will attempt to download it automatically using git.
 
+## Generating documentation
+ 
+Some API documentation is available using `sphinx`. Go the the `docs` directory, and run `make html` to generate documentation under `docs/_build/html`.
+
 
 # Training a model
 
