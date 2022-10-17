@@ -134,7 +134,7 @@ This augmenter can the be passed when creating a CoNLL dataset:
 
     from ddaugner.datas.conll import CoNLLDataset
 
-    train = CoNLLDataset.train_dataset({"PER": [MyAugmenter]}, {"PER": [1.0]})
+    train = CoNLLDataset.train_dataset({"PER": [MyAugmenter()]}, {"PER": [1.0]})
 	   
 
 Module reference
