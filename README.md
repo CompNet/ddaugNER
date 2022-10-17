@@ -35,7 +35,7 @@ Use the `train.py` script to train a model. To see all the possible options, use
 
 # Evaluating a model
 
-The `extract_metrics.py` script can be used to train a model. See `python extract_metrics.py --help` for more infos.
+The `extract_metrics.py` script can be used to evaluate a model. See `python extract_metrics.py --help` for more infos.
 
 
 # Published Articles
