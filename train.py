@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
-    parser.add_argument("-en", "--epochs-nb", type=int, default=5)
+    parser.add_argument("-en", "--epochs-nb", type=float, default=2.0)
     parser.add_argument("-bz", "--batch-size", type=int, default=4)
     parser.add_argument("-bm", "--batch-mode", action="store_true")
     parser.add_argument("-mp", "--model-path", type=str, default="./ner_model")
@@ -105,6 +105,10 @@ if __name__ == "__main__":
         weights = [1.0 for _ in train.tags]
         for tag, weight in args.custom_weights.items():
             weights[train.tag_to_id[tag]] = weight
+
+    # TODO: dev
+    train.sents = train.sents[:20]
+    valid.sents = valid.sents[:20]
 
     # training
     model = train_ner_model(

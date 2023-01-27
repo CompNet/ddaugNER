@@ -1,5 +1,5 @@
-from typing import Optional, List
-import copy, json
+from typing import Optional, List, cast
+import copy, json, math
 import torch
 from torch.utils.data import DataLoader
 from transformers import BertTokenizerFast
@@ -19,7 +19,7 @@ def train_ner_model(
     model: BertForTokenClassification,
     train_dataset: NERDataset,
     valid_dataset: NERDataset,
-    epochs_nb: int = 5,
+    epochs_nb: float = 2.0,
     batch_size: int = 4,
     learning_rate: float = 2e-5,
     use_class_weights: bool = False,
@@ -28,9 +28,12 @@ def train_ner_model(
 ) -> BertForTokenClassification:
     """
     :param train_dataset:
-    :param custom_weights: A list of class weights. Should be ordered by
-        using ``dataset.tag_to_id``.
+    :param epochs_nb: number of epochs.  Can be a float to allow for
+        uncomplete epochs.
+    :param custom_weights: A list of class weights.  Should be ordered
+        by using ``dataset.tag_to_id``.
     """
+    assert epochs_nb >= 0
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     model = model.to(device)
@@ -45,17 +48,31 @@ def train_ner_model(
     optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
 
     data_collator = DataCollatorForTokenClassificationWithBatchEncoding(tokenizer)
-    dataloader = DataLoader(
-        train_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        collate_fn=data_collator,
-    )
 
     best_f1 = 0
     best_model = model
 
-    for _ in range(epochs_nb):
+    for epoch_i in range(math.ceil(epochs_nb)):
+
+        is_last_epoch = epochs_nb - epoch_i <= 1
+        if is_last_epoch:
+            # * Support for float epochs
+            #   In the case of floating number of epochs (e.g. 2.2
+            #   epochs), the last epochs will only be performed on a
+            #   fraction of the dataset (e.g. 0.2 * len(dataset)
+            #   examples)
+            train_dataset = copy.copy(train_dataset)
+            # ]0.0,1.0]
+            last_epoch_size = epochs_nb - epoch_i
+            train_dataset.sents = train_dataset.sents[
+                : int(len(train_dataset) * last_epoch_size)
+            ]
+        dataloader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=True,
+            collate_fn=data_collator,
+        )
 
         epoch_losses = []
         model = model.train()
@@ -80,7 +97,7 @@ def train_ner_model(
             optimizer.step()
 
             if not quiet:
-                data_tqdm.set_description(f"loss : {loss.item():.3f}")
+                data_tqdm.set_description(f"loss : {loss.item():.3f}")  # type: ignore
             epoch_losses.append(loss.item())
 
         mean_epoch_loss = sum(epoch_losses) / len(epoch_losses)
@@ -90,6 +107,7 @@ def train_ner_model(
         predicted_tags = predict(
             model, valid_dataset, batch_size=batch_size, quiet=quiet
         )
+        predicted_tags = cast(List[List[str]], predicted_tags)
         precision, recall, f1 = score_ner(valid_dataset.sents, predicted_tags)
 
         tqdm.write(
