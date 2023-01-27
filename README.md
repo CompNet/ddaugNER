@@ -40,6 +40,137 @@ The `extract_metrics.py` script can be used to evaluate a model. See `python ext
 
 # Published Articles
 
+
+## Data Augmentation for Robust Character Detection in Fantasy Novels
+
+### Main Results
+
+The following command trains a model without any augmentation:
+
+```sh
+python train.py\
+       --epochs-nb 2\
+       --batch-size 4\
+       --context-size 1\
+       --model-path model.pth
+```
+
+While the following trains a model with our `The Elder Scrolls` augmentation as in the article:
+
+```sh
+for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
+
+    python train.py\
+	   --epochs-nb 2\
+	   --batch-size 4\
+	   --context-size 0\
+	   --data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
+	   --data-aug-frequencies "{\"PER\": [${aug_rate}]}"\
+	   --model-path "augmented_model_${aug_rate}.pth"
+
+done
+```
+
+After training a model, you can see its performance on the dataset with the `extract_metrics.py` script :
+
+```sh
+python extract_metrics.py\
+       --model-path model.pth\
+       --global-metrics\
+       --context-size 0\
+       --book-group "fantasy"\
+       --output-file results.json
+```
+
+### Alternative augmentation methods
+
+You can reproduce results shown in Figure 3 using the following:
+
+```sh
+for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
+
+    for aug_method in 'balance_upsample' 'replace'; do
+
+	python train.py\
+	    --epochs-nb 2\
+	    --batch-size 4\
+	    --context-size 0\
+	    --data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
+	    --data-aug-frequencies "{\"PER\": [${aug_rate}]}"\
+	    --data-aug-method "${aug_method}"
+	    --model-path "augmented_model_${aug_method}_${aug_rate}.pth"
+
+    done
+
+done
+```
+
+### Context size
+
+Results in Figure 4 can be reproduced using:
+
+```sh
+for context_size in 1 2 3 4 5 6 7 8 9; do
+
+    python train.py\
+	--epochs-nb 2\
+	--batch-size 4\
+	--context-size ${context_size}\
+	--data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
+	--data-aug-frequencies "{\"PER\": [0.1]}"\
+	--model-path "augmented_model_${context_size}.pth"
+
+done
+```
+
+
+
+## Remplacement de mentions pour l'adaptation d'un corpus de reconnaissance d'entités nommées à un domaine cible
+
+All augmentation configurations can be tested as in the article :
+
+```sh
+for i in 0.05 0.1 0.5 1.0; do
+
+    for aug in conll wgold morrowind dekker; do
+
+	python train.py\
+	       --epochs-nb 2\
+	       --batch-size 4\
+	       --context-size 1\
+	       --data-aug-strategies "{\"PER\": [\"${aug}\"]}"\
+	       --data-aug-frequencies "{\"PER\": [${i}]}"\
+	       --model-path augmented_model.pth
+
+	python extract_metrics.py\
+	       --model-path model.pth\
+	       --global-metrics\
+	       --context-size 1\
+	       --book-group "fantasy"\
+	       --output-file "results_${aug}_${i}.json"
+
+    done
+
+done
+```
+
+### Citation
+
+Please cite this work as follows :
+
+```bibtex
+@InProceedings{amalvy:hal-03651510,
+  title = {{Remplacement de mentions pour l'adaptation d'un corpus de reconnaissance d'entit{\'e}s nomm{\'e}es {\`a} un domaine cible}},
+  author = {Amalvy, Arthur and Labatut, Vincent and Dufour, Richard},
+  url = {https://hal.archives-ouvertes.fr/hal-03651510},
+  booktitle = {{29{\`e}me Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)}},
+  year = {2022},
+  hal_id = {hal-03651510},
+  hal_version = {v3},
+}
+```
+
+
 ## BERT meets d'Artagnan : Data Augmentation for Robust Character Detection in Novels
 
 The following command trains a model without any augmentation :
@@ -90,52 +221,6 @@ Please cite this work as follows :
   year = {2022},
   hal_id = {hal-03617722},
   hal_version = {v2},
-}
-```
-
-
-## Remplacement de mentions pour l'adaptation d'un corpus de reconnaissance d'entités nommées à un domaine cible
-
-All augmentation configurations can be tested as in the article :
-
-```sh
-for i in 0.05 0.1 0.5 1.0; do
-
-    for aug in conll wgold morrowind dekker; do
-
-		poetry run python train.py\
-			--epochs-nb 2\
-			--batch-size 4\
-			--context-size 1\
-			--data-aug-strategies "{\"PER\": [\"${aug}\"]}"\
-			--data-aug-frequencies "{\"PER\": [${i}]}"\
-			--model-path augmented_model.pth
-
-		poetry run python extract_metrics.py\
-			--model-path model.pth\
-			--global-metrics\
-			--context-size 1\
-			--book-group "fantasy"\
-			--output-file "results_${aug}_${i}.json"
-
-    done
-
-done
-```
-
-### Citation
-
-Please cite this work as follows :
-
-```bibtex
-@InProceedings{amalvy:hal-03651510,
-  title = {{Remplacement de mentions pour l'adaptation d'un corpus de reconnaissance d'entit{\'e}s nomm{\'e}es {\`a} un domaine cible}},
-  author = {Amalvy, Arthur and Labatut, Vincent and Dufour, Richard},
-  url = {https://hal.archives-ouvertes.fr/hal-03651510},
-  booktitle = {{29{\`e}me Conf{\'e}rence sur le Traitement Automatique des Langues Naturelles (TALN)}},
-  year = {2022},
-  hal_id = {hal-03651510},
-  hal_version = {v3},
 }
 ```
 
