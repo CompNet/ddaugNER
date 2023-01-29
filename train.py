@@ -106,10 +106,6 @@ if __name__ == "__main__":
         for tag, weight in args.custom_weights.items():
             weights[train.tag_to_id[tag]] = weight
 
-    # TODO: dev
-    train.sents = train.sents[:20]
-    valid.sents = valid.sents[:20]
-
     # training
     model = train_ner_model(
         model,
