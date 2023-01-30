@@ -15,6 +15,12 @@ if __name__ == "__main__":
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument("-en", "--epochs-nb", type=float, default=2.0)
+    parser.add_argument(
+        "-den",
+        "--dynamic-epochs-nb",
+        action="store_true",
+        help="If specified, the number of epochs (which is a float) will be modified according to the number of augmented examples added to the model, so that the model sees as much examples in total as he would have seen without augmentation.",
+    )
     parser.add_argument("-bz", "--batch-size", type=int, default=4)
     parser.add_argument("-bm", "--batch-mode", action="store_true")
     parser.add_argument("-mp", "--model-path", type=str, default="./ner_model")
@@ -76,7 +82,8 @@ if __name__ == "__main__":
     for ner_class, frequencies in data_aug_frequencies.items():
         assert len(frequencies) == len(augmenters[ner_class])
 
-    # dataset loading
+    # * dataset loading
+    # ** train dataset
     train = CoNLLDataset.train_dataset(
         augmenters,
         data_aug_frequencies,
@@ -85,9 +92,16 @@ if __name__ == "__main__":
         keep_only_classes=args.keep_only_classes,
         aug_method=args.data_aug_method,
     )
+    # *** dynamic epochs nb
+    if args.dynamic_epochs_nb:
+        args.epochs_nb = args.epochs_nb / (
+            train.augmented_sents_nb / train.original_sents_nb
+        )
+    # ** valid dataset
     valid = CoNLLDataset.valid_dataset(
         {}, {}, context_size=args.context_size, keep_only_classes=args.keep_only_classes
     )
+    # ** test dataset
     test = CoNLLDataset.test_dataset(
         {}, {}, context_size=args.context_size, keep_only_classes=args.keep_only_classes
     )

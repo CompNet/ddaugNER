@@ -291,6 +291,7 @@ class CoNLLDataset(NERDataset):
         self.sents = NERSentence.sents_with_surrounding_context(
             self.sents, context_size=context_size
         )
+        self.original_sents_nb = len(self.sents)
 
         # Data augmentation
         self.augmenters = augmenters
@@ -312,6 +313,8 @@ class CoNLLDataset(NERDataset):
                 )
             else:
                 raise ValueError(f"Unknown data augmentation method : {aug_method}")
+
+        self.augmented_sents_nb = len(self.sents)
 
         # Init
         super().__init__(

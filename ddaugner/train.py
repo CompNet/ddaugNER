@@ -1,5 +1,5 @@
 from typing import Optional, List, cast
-import copy, json, math
+import copy, json, math, random
 import torch
 from torch.utils.data import DataLoader
 from transformers import BertTokenizerFast
@@ -64,6 +64,7 @@ def train_ner_model(
             train_dataset = copy.copy(train_dataset)
             # ]0.0,1.0]
             last_epoch_size = epochs_nb - epoch_i
+            random.shuffle(train_dataset.sents)
             train_dataset.sents = train_dataset.sents[
                 : int(len(train_dataset) * last_epoch_size)
             ]
