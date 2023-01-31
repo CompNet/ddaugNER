@@ -79,6 +79,7 @@ python extract_metrics.py\
        --global-metrics\
        --context-size 0\
        --book-group "fantasy"\
+	   --fix-sent-tokenization\
        --output-file results.json
 ```
 
