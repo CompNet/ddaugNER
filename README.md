@@ -62,6 +62,7 @@ for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
 
     python train.py\
 	   --epochs-nb 2\
+	   --dynamic-epochs-nb\
 	   --batch-size 4\
 	   --context-size 0\
 	   --data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
@@ -94,6 +95,7 @@ for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
 
 	python train.py\
 	    --epochs-nb 2\
+	    --dynamic-epochs-nb\
 	    --batch-size 4\
 	    --context-size 0\
 	    --data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
@@ -115,10 +117,11 @@ for context_size in 1 2 3 4 5 6 7 8 9; do
 
     python train.py\
 	--epochs-nb 2\
+	--dynamic-epochs-nb\
 	--batch-size 4\
 	--context-size ${context_size}\
 	--data-aug-strategies '{"PER": ["the_elder_scrolls"]}'\
-	--data-aug-frequencies "{\"PER\": [0.1]}"\
+	--data-aug-frequencies "{\"PER\": [0.6]}"\
 	--model-path "augmented_model_${context_size}.pth"
 
 done
