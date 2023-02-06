@@ -71,7 +71,7 @@ for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
 done
 ```
 
-After training a model, you can see its performance on the dataset with the `extract_metrics.py` script :
+After training a model, you can see its performance on the dataset with the `extract_metrics.py` script:
 
 ```sh
 python extract_metrics.py\
@@ -125,6 +125,25 @@ done
 ```
 
 
+### Citation
+
+Please cite this work as follows:
+
+```bibtex
+@Article{amalvy-2022-data_aug,
+  title	       = {{Data Augmentation for Robust Character Detection in
+                  Fantasy Novels}},
+  author       = {Amalvy, A. and Labatut, V. and Dufour, R.},
+  url	       = {https://hal.science/hal-03972448},
+  booktitle    = {{Workshop on Computational Methods in the Humanities
+                  2022}},
+  year	       = {2022},
+  journal      = {HAL},
+  pages	       = {03972448},
+}
+```
+
+
 
 ## Remplacement de mentions pour l'adaptation d'un corpus de reconnaissance d'entités nommées à un domaine cible
 
@@ -174,7 +193,7 @@ Please cite this work as follows :
 
 ## BERT meets d'Artagnan : Data Augmentation for Robust Character Detection in Novels
 
-The following command trains a model without any augmentation :
+The following command trains a model without any augmentation:
 
 ```sh
 poetry run python train.py\
@@ -184,7 +203,7 @@ poetry run python train.py\
        --model-path model.pth
 ```
 
-While the following trains a model with our *morrowind* augmentation as in the article :
+While the following trains a model with our *morrowind* augmentation as in the article:
 
 ```sh
 poetry run python train.py\
@@ -198,7 +217,7 @@ poetry run python train.py\
 
 Replace `morrowind` with `word_names` to use our word names augmentation.
 
-After training a model, you can see its performance on the dataset with the `extract_metrics.py` script :
+After training a model, you can see its performance on the dataset with the `extract_metrics.py` script:
 
 ```sh
 poetry run python extract_metrics.py\
