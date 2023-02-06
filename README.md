@@ -133,16 +133,17 @@ done
 Please cite this work as follows:
 
 ```bibtex
-@Article{amalvy-2022-data_aug,
+@InProceedings{amalvy:hal-03972448,
   title	       = {{Data Augmentation for Robust Character Detection in
                   Fantasy Novels}},
-  author       = {Amalvy, A. and Labatut, V. and Dufour, R.},
+  author       = {Amalvy, Arthur and Labatut, Vincent and Dufour,
+                  Richard},
   url	       = {https://hal.science/hal-03972448},
   booktitle    = {{Workshop on Computational Methods in the Humanities
                   2022}},
-  year	       = {2022},
-  journal      = {HAL},
-  pages	       = {03972448},
+  YEAR	       = {2022},
+  hal_id       = {hal-03972448},
+  hal_version  = {v1},
 }
 ```
 
