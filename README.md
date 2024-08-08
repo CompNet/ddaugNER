@@ -15,13 +15,16 @@ Alternatively, you can manage everything in your own environment using the provi
 
 ## Literary test corpus
 
-We re-annotated the corpus of [Dekker et al., 2019](https://peerj.com/articles/cs-189/#named-entity-recognition-experiments-and-results) to fix some errors. Due to copyright issues, tokens from the datasets are not directly available in this repository, but can be retrieved through a script :
+*Contrarily to the main branch, we use Novelties v0.1.0 for our experiments*
+
+To setup the dataset correctly, run:
 
 ```sh
-python setup_dekker_dataset.py --dekker-etal-repo-path /path/to/dekker/repository
+cd ner
+git clone https://github.com/CompNet/Novelties.git
+git checkout bd5073b3b3773c6a11c54bc67eed5af91d632ad6 # v0.1.0 release commit
 ```
 
-If you don't specify a path to Dekker et al repository, the script will attempt to download it automatically using git.
 
 ## Generating documentation
  
