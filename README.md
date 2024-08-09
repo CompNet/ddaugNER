@@ -20,8 +20,10 @@ Alternatively, you can manage everything in your own environment using the provi
 To setup the dataset correctly, run:
 
 ```sh
+mkdir -p ner
 cd ner
-git clone https://github.com/CompNet/Novelties.git
+git clone git@github.com:CompNet/Novelties.git
+cd Novelties
 git checkout bd5073b3b3773c6a11c54bc67eed5af91d632ad6 # v0.1.0 release commit
 ```
 
@@ -42,6 +44,39 @@ The `extract_metrics.py` script can be used to evaluate a model. See `python ext
 
 
 # Published Articles
+
+## PhD Thesis
+
+```sh
+for aug_rate in 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1.0; do
+
+    for aug in conll wgold morrowind dekker; do
+
+        python train.py\
+               --epochs-nb 2\
+               --batch-size 4\
+               --context-size 0\
+               --data-aug-strategies "{\"PER\": [\"${aug}\"]}"\
+               --data-aug-frequencies "{\"PER\": [${aug_rate}]}"\
+               --model-path model.pth
+
+        python extract_metrics.py\
+               --model-path model.pth\
+               --global-metrics\
+               --context-size 0\
+               --book-group "fantasy"\
+               --output-file "global_results_${aug}_${aug_rate}.json"
+
+        python extract_metrics.py\
+               --model-path model.pth\
+               --context-size 0\
+               --book-group "fantasy"\
+               --output-file "results_${aug}_${aug_rate}.json"
+
+    done
+
+done
+```
 
 
 ## Data Augmentation for Robust Character Detection in Fantasy Novels

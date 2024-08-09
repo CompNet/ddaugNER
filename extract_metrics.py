@@ -8,8 +8,7 @@ from transformers import BertForTokenClassification  # type: ignore
 
 from ddaugner.predict import predict
 from ddaugner.ner_utils import prediction_errors
-from ddaugner.datas import BookDataset
-from ddaugner.datas.dekker import load_dekker_books, load_dekker_dataset
+from ddaugner.datas.novelties import load_novelties_dataset, load_novelties_books
 
 script_dir = f"{os.path.dirname(os.path.abspath(__file__))}"
 
@@ -34,8 +33,8 @@ if __name__ == "__main__":
 
     if args.global_metrics:
 
-        dataset = load_dekker_dataset(
-            "./ner",
+        dataset = load_novelties_dataset(
+            "./ner/Novelties",
             args.book_group,
             args.context_size,
             args.fix_sent_tokenization,
@@ -58,8 +57,11 @@ if __name__ == "__main__":
 
         exit(0)
 
-    book_datasets = load_dekker_books(
-        "./ner", args.book_group, args.context_size, args.fix_sent_tokenization
+    book_datasets = load_novelties_books(
+        "./ner/Novelties",
+        args.book_group,
+        args.context_size,
+        args.fix_sent_tokenization,
     )
 
     book_metrics = {}

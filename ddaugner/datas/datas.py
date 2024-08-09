@@ -163,9 +163,11 @@ class DataCollatorForTokenClassificationWithBatchEncoding:
         # ignore "tokens_labels_mask"
         return BatchEncoding(
             {
-                k: torch.tensor(v, dtype=torch.int64)
-                if not k in {"tokens_labels_mask"}
-                else v
+                k: (
+                    torch.tensor(v, dtype=torch.int64)
+                    if not k in {"tokens_labels_mask"}
+                    else v
+                )
                 for k, v in batch.items()
             },
             encoding=batch.encodings,
@@ -290,14 +292,23 @@ class BookDataset(NERDataset):
     """"""
 
     def __init__(
-        self, path: str, context_size: int = 0, fix_sent_tokenization: bool = False
+        self,
+        path: str,
+        context_size: int = 0,
+        fix_sent_tokenization: bool = False,
+        tags: Optional[Set[str]] = None,
     ) -> None:
         """
         :param path:
         :param context_size:
         :param fix_sent_tokenization:
+        :param tags: set of tags for the dataset.  if ``None``, will
+            be set to {"O", "B-PER", "I-PER"} (legacy behaviour).
         """
         self.path = path
+
+        if tags is None:
+            tags = {"O", "B-PER", "I-PER"}
 
         sents = []
         with open(path) as f:
@@ -314,7 +325,7 @@ class BookDataset(NERDataset):
 
         if not fix_sent_tokenization:
             sents = NERSentence.sents_with_surrounding_context(sents, context_size)
-            super().__init__(sents, {"O", "B-PER", "I-PER"})
+            super().__init__(sents, tags)
             return
 
         for sent in sents:
