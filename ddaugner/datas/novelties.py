@@ -22,7 +22,32 @@ groups = {
         "TheColourOfMagic",
         "TheWayOfKings",
         "TheLiesOfLockeLamora",
-    }
+    },
+    "nofantasy": {
+        "1984",
+        "AliceInWonderland",
+        "AStudyInScarlet",
+        "BraveNewWorld",
+        "DavidCopperfield",
+        "Dracula",
+        "Emma",
+        "Frankenstein",
+        "HarryPotter",
+        "HuckleberryFinn",
+        "JekyllAndHyde",
+        "MobyDick",
+        "OliverTwist",
+        "PrideAndPrejudice",
+        "StormFront",
+        "TheCallOfTheWild",
+        "TheCountOfMonteCristo",
+        "TheGunslinger",
+        "TheThreeMusketeers",
+        "TheWayWeLiveNow",
+        "TinkerTailorSoldierSpy",
+        "Ulysses",
+        "VanityFair",
+    },
 }
 
 
