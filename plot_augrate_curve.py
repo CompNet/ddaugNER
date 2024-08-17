@@ -78,8 +78,9 @@ def plot_errorbar(
         [x for x, _ in xy],
         [mean(y) for _, y in xy],
         yerr=[stdev(y) for _, y in xy],
-        elinewidth=1,
-        capsize=7,
+        elinewidth=2,
+        capsize=6,
+        linewidth=3,
         label=metric,
     )
 
@@ -101,14 +102,13 @@ if __name__ == "__main__":
         ("the_elder_scrolls", axs[1][0]),
         ("dekker_fantasy", axs[1][1]),
     ]:
-        plot_errorbar(ax, f1s[aug], "f1")
-        plot_errorbar(ax, precisions[aug], "precision")
-        plot_errorbar(ax, recalls[aug], "recall")
+        plot_errorbar(ax, f1s[aug], "F1")
+        plot_errorbar(ax, precisions[aug], "Precision")
+        plot_errorbar(ax, recalls[aug], "Recall")
         ax.set_title(AUG2PRETTY[aug])
-        ax.set_xlabel("Augmentation rate")
         ax.grid()
 
+    fig.text(0.5, 0.05, "Augmentation rate", ha="center")
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=3, fancybox=True)
-    plt.tight_layout()
     plt.show()
