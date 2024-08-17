@@ -1,16 +1,16 @@
 import os, json, copy
 import nltk
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Set
 import functools
 import pandas as pd
 from nltk.corpus import stopwords
 from tqdm import tqdm
 from nameparser.config.titles import TITLES
-from transformers import BertTokenizer
+from transformers import BertTokenizer  # type: ignore
 from rich import print
 from ddaugner.datas.conll import CoNLLDataset
 from ddaugner.utils import entities_from_bio_tags, flattened
-from ddaugner.datas.dekker import load_dekker_dataset
+from ddaugner.datas.novelties import load_novelties_dataset
 
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -95,12 +95,12 @@ def overlap_subsets(target_set: Set[str], source_set: Set[str]) -> Dict[str, flo
 
 if __name__ == "__main__":
 
-    dekker_dataset = load_dekker_dataset("./ner", "fantasy")
-    dekker_entities = entities_from_bio_tags(
-        flattened([s.tokens for s in dekker_dataset.sents]),
-        flattened([s.tags for s in dekker_dataset.sents]),
+    novelties_dataset = load_novelties_dataset("./ner/Novelties", book_group="fantasy")
+    novelties_entities = entities_from_bio_tags(
+        flattened([s.tokens for s in novelties_dataset.sents]),
+        flattened([s.tags for s in novelties_dataset.sents]),
     )
-    dekker_names = set(flattened([e.tokens for e in dekker_entities]))
+    novelties_names = set(flattened([e.tokens for e in novelties_entities]))
 
     conll_dataset = CoNLLDataset.train_dataset({}, {})
     conll_entities = entities_from_bio_tags(
@@ -136,7 +136,7 @@ if __name__ == "__main__":
     )
 
     namesets = {
-        "dekker": dekker_names,
+        "novelties": novelties_names,
         "conll": conll_names,
         "wgold": wgold_names,
         "morrowind": morrowind_names,
@@ -150,15 +150,15 @@ if __name__ == "__main__":
 
     rows = []
 
-    for nameset in set(namesets.keys()) - {"dekker"}:
+    for nameset in set(namesets.keys()) - {"novelties"}:
         rows.append(
             pd.Series(
                 {
-                    "exact matchs": overlaps[f"dekker {nameset}"]["exact matchs"],
-                    "wordpiece partial matchs": overlaps[f"dekker {nameset}"][
+                    "exact matchs": overlaps[f"novelties {nameset}"]["exact matchs"],
+                    "wordpiece partial matchs": overlaps[f"novelties {nameset}"][
                         "wordpiece partial matchs"
                     ],
-                    "new": overlaps[f"dekker {nameset}"]["new"],
+                    "new": overlaps[f"novelties {nameset}"]["new"],
                 },
                 name=nameset,
             )
@@ -168,12 +168,12 @@ if __name__ == "__main__":
         rows,
         columns=["exact matchs", "wordpiece partial matchs", "new"],
     )
-    print("Overlap with dekker fantasy dataset")
+    print("Overlap with novelties fantasy dataset")
     print(df)
 
     rows = []
 
-    for nameset in set(namesets.keys()) - {"dekker"}:
+    for nameset in set(namesets.keys()) - {"novelties"}:
         rows.append(
             pd.Series(
                 {
