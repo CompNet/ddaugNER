@@ -1,10 +1,12 @@
-from typing import Dict, List, Literal, cast
+from typing import Dict, List, Literal, cast, Tuple
 import pathlib as pl
-import re, json, os
+import re, json, os, argparse
 from dataclasses import dataclass
 from statistics import mean, stdev
 from collections import defaultdict
 import matplotlib.pyplot as plt
+import scipy.stats as stats
+import numpy as np
 import scienceplots
 
 
@@ -53,13 +55,15 @@ def load_metrics(
         "wgold": defaultdict(list),
         "the_elder_scrolls": defaultdict(list),
         "dekker_fantasy": defaultdict(list),
-        "morrowind": defaultdict(list),
     }
 
     for path in directory.glob("global_results_*.json"):
         xpparams = get_file_xp_params(str(path))
         xpmetrics = metrics_from_file(str(path))
-        metrics[xpparams.aug][xpparams.aug_rate].append(xpmetrics[metric])
+        try:
+            metrics[xpparams.aug][xpparams.aug_rate].append(xpmetrics[metric])
+        except KeyError:
+            continue
 
     return {
         key: {**values, **metrics["none"]}
@@ -68,29 +72,52 @@ def load_metrics(
     }  # type: ignore
 
 
-def plot_errorbar(
-    ax,
-    metrics_list: Dict[float, List[float]],
-    metric: Literal["precision", "recall", "f1"],
-):
+def confidence_interval(metric: List[float]) -> Tuple[float, float]:
+    """
+    :return: ``(mean - low_ci_bound, high_ci_bound - mean)``
+    """
+    metric_mean = mean(metric)
+    low, high = stats.t.interval(
+        0.95,
+        len(metric) - 1,
+        loc=metric_mean,
+        scale=stats.sem(metric),
+    )
+    return (metric_mean - low, high - metric_mean)
+
+
+def plot_errorbar(ax, metrics_list: Dict[float, List[float]], metric: str):
     xy = sorted(metrics_list.items(), key=lambda kv: kv[0])
+    x = [x for x, _ in xy]
+    y = [y for _, y in xy]
+    ci = np.array([confidence_interval(e) for e in y]).swapaxes(0, 1)
     ax.errorbar(
-        [x for x, _ in xy],
-        [mean(y) for _, y in xy],
-        yerr=[stdev(y) for _, y in xy],
+        x,
+        [mean(e) for e in y],
+        ci,
         elinewidth=2,
-        capsize=6,
-        linewidth=3,
+        capsize=3,
+        linewidth=1.5,
         label=metric,
     )
 
 
 if __name__ == "__main__":
 
-    plt.style.use("science")
-    plt.rcParams.update({"font.size": 22})
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--output", type=pl.Path)
+    args = parser.parse_args()
 
-    fig, axs = plt.subplots(2, 2)
+    FONTSIZE = 8
+    COLUMN_WIDTH_IN = 6.3
+    ASPECT_RATIO = 0.7
+
+    plt.style.use(["science", "grid"])
+    plt.rcParams.update({"font.size": FONTSIZE})
+
+    fig, axs = plt.subplots(
+        2, 2, figsize=(COLUMN_WIDTH_IN, COLUMN_WIDTH_IN * ASPECT_RATIO)
+    )
 
     f1s = load_metrics(pl.Path("./metrics/phdthesis"), "f1")
     precisions = load_metrics(pl.Path("./metrics/phdthesis"), "precision")
@@ -106,9 +133,20 @@ if __name__ == "__main__":
         plot_errorbar(ax, precisions[aug], "Precision")
         plot_errorbar(ax, recalls[aug], "Recall")
         ax.set_title(AUG2PRETTY[aug])
-        ax.grid()
 
-    fig.text(0.5, 0.05, "Augmentation rate", ha="center")
+    fig.text(0.5, 0.00, "Augmentation rate", ha="center")
     handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles, labels, loc="upper center", ncol=3, fancybox=True)
-    plt.show()
+    fig.legend(
+        handles,
+        labels,
+        loc="lower center",
+        bbox_to_anchor=(0.5, 0.95),
+        ncol=3,
+        fancybox=True,
+    )
+
+    plt.tight_layout()
+    if args.output:
+        plt.savefig(args.output)
+    else:
+        plt.show()
